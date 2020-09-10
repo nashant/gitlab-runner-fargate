@@ -1,0 +1,17 @@
+LogLevel = "error"
+LogFormat = "text"
+
+[Fargate]
+  Cluster = "$CLUSTER"
+  Region = "$REGION"
+  Subnet = "$SUBNET"
+  SecurityGroup = "$SECURITYGROUP"
+  TaskDefinition = "$TASK"
+  EnablePublicIP = false
+
+[TaskMetadata]
+  Directory = "/etc/gitlab-runner/metadata"
+
+[SSH]
+  Username = "root"
+  PrivateKeyPath = "/etc/gitlab-runner/fargate/id_rsa"

@@ -1,0 +1,19 @@
+concurrent = 3
+check_interval = 10
+
+[[runners]]
+  name = "$NAME"
+  url = "$URL"
+  token = "$TOKEN"
+  executor = "custom"
+  builds_dir = "/etc/gitlab-runner/builds"
+  cache_dir = "/etc/gitlab-runner/cache"
+  [runners.custom]
+    config_exec = "/etc/gitlab-runner/fargate/fargate"
+    config_args = ["--config", "/etc/gitlab-runner/fargate/config.toml", "custom", "config"]
+    prepare_exec = "/etc/gitlab-runner/fargate/fargate"
+    prepare_args = ["--config", "/etc/gitlab-runner/fargate/config.toml", "custom", "prepare"]
+    run_exec = "/etc/gitlab-runner/fargate/fargate"
+    run_args = ["--config", "/etc/gitlab-runner/fargate/config.toml", "custom", "run"]
+    cleanup_exec = "/etc/gitlab-runner/fargate/fargate"
+    cleanup_args = ["--config", "/etc/gitlab-runner/fargate/config.toml", "custom", "cleanup"]
