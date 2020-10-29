@@ -2,11 +2,11 @@
 
 error() {
   # shellcheck disable=SC2039
-  echo "Error: $1"
+  >$2 echo "Error: $1"
   exit 1
 }
 
-VARS="PRIVATE_KEY URL REGISTRATION_TOKEN NAME TAGS CLUSTER REGION SUBNET SECURITYGROUP TASK"
+VARS="PRIVATE_KEY URL REGISTRATION_TOKEN RUNNER_TOKEN NAME TAGS CLUSTER REGION SUBNET SECURITYGROUP TASK"
 
 verify_var() {
   VAR="$1"
@@ -50,43 +50,30 @@ while [[ "$STATUS" != "ok" ]]; do
   let CHECK_COUNT++
 done
 
-echo "Getting stored runner token"
-RUNNER_TOKEN=$(aws ssm get-parameters --region "$REGION" --names /svc/gitlab/runner_token --with-decryption | jq -r '.Parameters[0].Value' | sed 's/REPLACE_ME//')
-if [ -z "$RUNNER_TOKEN" ]; then
-  echo "Runner token not found"
-else
-  echo "Runner token found, validating"
-  VALID=$(curl --request POST "$URL/api/v4/runners/verify" --form "token=$RUNNER_TOKEN" -s)
-fi
-
-if [[ "$VALID" == "200" ]]; then
-  echo "Token valid"
-else
-  echo "Token invalid, resetting"
-  RUNNER_TOKEN=""
-fi
-
-if [ -z "$RUNNER_TOKEN" ]; then
-  echo "Registering new runner"
+register_runner() {
+  >$2 echo "Registering runner"
   RUNNER_TOKEN=$(curl --request POST "$URL/api/v4/runners" --form "token=$REGISTRATION_TOKEN" --form "description=$NAME" --form "tag_list=$TAGS" -s | jq -r '.token')
-  NEW_TOKEN=1
-fi
+  push_token
+}
 
-if [ -z "$RUNNER_TOKEN" ]; then
-  error "No token available"
-else
-  echo "Runner registered, validating token"
-  VALID=$(curl --request POST "$URL/api/v4/runners/verify" --form "token=$RUNNER_TOKEN" -s)
-fi
+validate_runner_token() {
+  >$2 echo "Validating runner token"
+  curl --request POST "$URL/api/v4/runners/verify" --form "token=$RUNNER_TOKEN" -s
+}
 
-if [[ "$VALID" == "200" ]]; then
-  if [ -n "$NEW_TOKEN" ]; then
-    echo "Token valid, pushing to SSM"
-    aws ssm put-parameter --region "$REGION" --name /svc/gitlab/runner_token --value "$RUNNER_TOKEN" --type SecureString --overwrite
-  fi
-else
-  error "Token not valid"
-fi
+push_token() {
+  >$2 echo "Pushing token to SSM"
+  aws ssm put-parameter --region "$REGION" --name /svc/gitlab/runner_token --value "$RUNNER_TOKEN" --type SecureString --overwrite
+}
+
+let VALIDATE_COUNT=0
+while [[ "$(validate_runner_token)" != "200" ]]; do
+  [ $VALIDATE_COUNT -eq 10 ] && error "Unable to register runner"
+  echo "Token invalid"
+  register_runner
+  sleep 10
+  let VALIDATE_COUNT++
+done
 
 echo "Starting runner"
 /usr/bin/dumb-init /entrypoint "$@"
