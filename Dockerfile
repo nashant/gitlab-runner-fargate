@@ -1,4 +1,4 @@
-FROM gitlab/gitlab-runner:alpine
+FROM gitlab/gitlab-runner:alpine-v13.5.0
 
 ENV PRIVATE_KEY="" \
     URL="" \
