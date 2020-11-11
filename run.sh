@@ -10,7 +10,7 @@ error() {
   exit 1
 }
 
-VARS="PRIVATE_KEY URL REGISTRATION_TOKEN RUNNER_TOKEN NAME TAGS CLUSTER REGION SUBNET SECURITYGROUP TASK"
+VARS="PRIVATE_KEY URL REGISTRATION_TOKEN RUNNER_TOKEN RUNNER_TOKEN_SSM_PARAMETER NAME TAGS CLUSTER REGION SUBNET SECURITYGROUP TASK"
 
 verify_var() {
   VAR="$1"
@@ -67,7 +67,7 @@ validate_runner_token() {
 
 push_token() {
   stderr "Pushing token to SSM"
-  aws ssm put-parameter --region "$REGION" --name /svc/gitlab/runner_token --value "$RUNNER_TOKEN" --type SecureString --overwrite
+  aws ssm put-parameter --region "$REGION" --name "$RUNNER_TOKEN_SSM_PARAMETER" --value "$RUNNER_TOKEN" --type SecureString --overwrite
 }
 
 let VALIDATE_COUNT=0
