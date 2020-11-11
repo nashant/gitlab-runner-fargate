@@ -67,7 +67,7 @@ push_token() {
 }
 
 let VALIDATE_COUNT=0
-while [[ "$RUNNER_TOKEN" == "REPLACE_ME"]] || [[ "$(validate_runner_token)" != "200" ]]; do
+while [[ "$(validate_runner_token)" != "200" ]]; do
   [ $VALIDATE_COUNT -eq 10 ] && error "Unable to register runner"
   [[ "$RUNNER_TOKEN" == "REPLACE_ME"]] || echo "Token invalid"
   register_runner
