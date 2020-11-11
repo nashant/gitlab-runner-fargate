@@ -72,9 +72,9 @@ push_token() {
 
 let VALIDATE_COUNT=0
 while [[ "$VALIDATION" != "200" ]]; do
-  VALIDATION="$(validate_runner_token)"
+  VALIDATION=$(validate_runner_token)
   [ $VALIDATE_COUNT -eq 10 ] && error "Unable to register runner"
-  [[ "$RUNNER_TOKEN" == "REPLACE_ME" ]] || stderr "Token invalid:  $VALIDATION"
+  [[ "$RUNNER_TOKEN" == "REPLACE_ME" ]] || stderr "Token invalid: $VALIDATION"
   register_runner
   sleep 10
   let VALIDATE_COUNT++
