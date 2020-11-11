@@ -51,18 +51,18 @@ while [[ "$STATUS" != "ok" ]]; do
 done
 
 register_runner() {
-  >$2 echo "Registering runner"
+  >&2 echo "Registering runner"
   RUNNER_TOKEN=$(curl --request POST "$URL/api/v4/runners" --form "token=$REGISTRATION_TOKEN" --form "description=$NAME" --form "tag_list=$TAGS" -s | jq -r '.token')
   push_token
 }
 
 validate_runner_token() {
-  >$2 echo "Validating runner token"
+  >&2 echo "Validating runner token"
   curl --request POST "$URL/api/v4/runners/verify" --form "token=$RUNNER_TOKEN" -s
 }
 
 push_token() {
-  >$2 echo "Pushing token to SSM"
+  >&2 echo "Pushing token to SSM"
   aws ssm put-parameter --region "$REGION" --name /svc/gitlab/runner_token --value "$RUNNER_TOKEN" --type SecureString --overwrite
 }
 
