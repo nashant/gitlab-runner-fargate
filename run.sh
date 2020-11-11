@@ -66,14 +66,15 @@ validate_runner_token() {
 }
 
 push_token() {
-  stderr "Pushing token to SSM"
+  stderr "Pushing token $RUNNER_TOKEN to SSM"
   aws ssm put-parameter --region "$REGION" --name "$RUNNER_TOKEN_SSM_PARAMETER" --value "$RUNNER_TOKEN" --type SecureString --overwrite
 }
 
 let VALIDATE_COUNT=0
-while [[ "$(validate_runner_token)" != "200" ]]; do
+while [[ "$VALIDATION" != "200" ]]; do
+  VALIDATION="$(validate_runner_token)"
   [ $VALIDATE_COUNT -eq 10 ] && error "Unable to register runner"
-  [[ "$RUNNER_TOKEN" == "REPLACE_ME" ]] || stderr "Token invalid"
+  [[ "$RUNNER_TOKEN" == "REPLACE_ME" ]] || stderr "Token invalid:  $VALIDATION"
   register_runner
   sleep 10
   let VALIDATE_COUNT++
