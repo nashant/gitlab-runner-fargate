@@ -62,7 +62,7 @@ register_runner() {
 
 validate_runner_token() {
   stderr "Validating runner token"
-  curl --request POST "$URL/api/v4/runners/verify" --form "token=$RUNNER_TOKEN" -s
+  curl --request POST "$URL/api/v4/runners/verify" --form "token=$RUNNER_TOKEN" -s | jq -r .
 }
 
 push_token() {
