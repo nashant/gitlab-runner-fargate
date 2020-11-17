@@ -10,11 +10,8 @@ ENV PRIVATE_KEY="" \
     REGION="" \
     SUBNET="" \
     SECURITYGROUP="" \
-    TASK=""
-
-ADD config.toml /etc/gitlab-runner/config.toml
-ADD fargate-config.toml /etc/gitlab-runner/fargate/config.toml
-ADD https://gitlab-runner-custom-fargate-downloads.s3.amazonaws.com/latest/fargate-linux-amd64 /etc/gitlab-runner/fargate/fargate
+    TASK="" \
+    LOG_LEVEL="warn"
 
 RUN apk add --no-cache python3 py3-pip jq bash curl gettext && \
     pip install awscli && \
@@ -26,6 +23,8 @@ RUN apk add --no-cache python3 py3-pip jq bash curl gettext && \
     wget -O /opt/gitlab-runner/fargate/fargate https://gitlab-runner-custom-fargate-downloads.s3.amazonaws.com/latest/fargate-linux-amd64 && \
     chmod 0777 /opt/gitlab-runner/fargate/fargate
 
+ADD config.toml /opt/gitlab-runner/config.toml
+ADD fargate-config.toml /opt/gitlab-runner/fargate/config.toml
 ADD run.sh /run.sh
 
 ENTRYPOINT ["/run.sh"]

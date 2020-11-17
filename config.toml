@@ -4,7 +4,7 @@ check_interval = 10
 [[runners]]
   name = "$NAME"
   url = "$URL"
-  token = "$TOKEN"
+  token = "$RUNNER_TOKEN"
   executor = "custom"
   builds_dir = "/etc/gitlab-runner/builds"
   cache_dir = "/etc/gitlab-runner/cache"

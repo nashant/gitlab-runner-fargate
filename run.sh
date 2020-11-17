@@ -52,7 +52,6 @@ validate_runner_token() {
 }
 
 push_token() {
-<<<<<<< Updated upstream
   stderr "Pushing token $RUNNER_TOKEN to SSM"
   aws ssm put-parameter --region "$REGION" --name "$RUNNER_TOKEN_SSM_PARAMETER" --value "$RUNNER_TOKEN" --type SecureString --overwrite
 }
