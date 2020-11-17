@@ -18,9 +18,15 @@ ADD https://gitlab-runner-custom-fargate-downloads.s3.amazonaws.com/latest/farga
 
 RUN apk add --no-cache python3 py3-pip jq bash curl gettext && \
     pip install awscli && \
-    aws --version
+    aws --version && \
+    mkdir -p /opt/gitlab-runner/fargate && \
+    mkdir /opt/gitlab-runner/metadata && \
+    mkdir /opt/gitlab-runner/builds && \
+    mkdir /opt/gitlab-runner/cache && \
+    wget -O /opt/gitlab-runner/fargate/fargate https://gitlab-runner-custom-fargate-downloads.s3.amazonaws.com/latest/fargate-linux-amd64 && \
+    chmod 0777 /opt/gitlab-runner/fargate/fargate
 
 ADD run.sh /run.sh
 
 ENTRYPOINT ["/run.sh"]
-CMD ["run", "--user=root", "--working-directory=/root"]
+CMD ["run", "--user=root", "--working-directory=/root", "--config=/etc/gitlab-runner/config.toml"]

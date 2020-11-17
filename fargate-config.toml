@@ -1,4 +1,4 @@
-LogLevel = "error"
+LogLevel = "$LOG_LEVEL"
 LogFormat = "text"
 
 [Fargate]

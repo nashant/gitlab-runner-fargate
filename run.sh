@@ -21,24 +21,6 @@ for VAR in $VARS; do
   verify_var "$VAR"
 done
 
-stderr "Setting up /etc/gitlab-runner/config.toml"
-cat /etc/gitlab-runner/config.toml | envsubst > /etc/gitlab-runner/config.toml
-
-stderr "Setting up /etc/gitlab-runner/fargate/config.toml"
-cat /etc/gitlab-runner/fargate/config.toml | envsubst > /etc/gitlab-runner/fargate/config.toml
-
-stderr "Setting private key"
-echo "$PRIVATE_KEY" > /etc/gitlab-runner/fargate/id_rsa
-
-stderr "Setting debug public key"
-[ -d /root/.ssh ] || mkdir /root/.ssh
-echo "$DEBUG_PUBLIC_KEY" > /root/.ssh/authorized_keys
-
-stderr "Setting up /etc/gitlab-runner/fargate/fargate"
-mkdir /etc/gitlab-runner/{metadata,builds,cache}
-chown -R gitlab-runner /etc/gitlab-runner
-chmod 0777 /etc/gitlab-runner/fargate/fargate
-
 until curl "$URL" -s -o /dev/null; do
   stderr "Trying to curl $URL"
   sleep 5
@@ -70,6 +52,7 @@ validate_runner_token() {
 }
 
 push_token() {
+<<<<<<< Updated upstream
   stderr "Pushing token $RUNNER_TOKEN to SSM"
   aws ssm put-parameter --region "$REGION" --name "$RUNNER_TOKEN_SSM_PARAMETER" --value "$RUNNER_TOKEN" --type SecureString --overwrite
 }
@@ -84,6 +67,24 @@ while true; do
   sleep 10
   let VALIDATE_COUNT++
 done
+
+cp -r /opt/gitlab-runner/* /etc/gitlab-runner/
+
+stderr "Setting up /etc/gitlab-runner/config.toml"
+envsubst < /opt/gitlab-runner/config.toml > /etc/gitlab-runner/config.toml
+
+stderr "Setting up /etc/gitlab-runner/fargate/config.toml"
+envsubst < /opt/gitlab-runner/fargate/config.toml > /etc/gitlab-runner/fargate/config.toml
+
+stderr "Setting private key"
+echo "$PRIVATE_KEY" > /etc/gitlab-runner/fargate/id_rsa
+
+stderr "Setting debug public key"
+[ -d /root/.ssh ] || mkdir /root/.ssh
+echo "$DEBUG_PUBLIC_KEY" > /root/.ssh/authorized_keys
+
+stderr "Setting up /etc/gitlab-runner/fargate/fargate"
+chown -R gitlab-runner /etc/gitlab-runner
 
 echo "Starting runner"
 /usr/bin/dumb-init /entrypoint "$@"
