@@ -21,31 +21,13 @@ for VAR in $VARS; do
   verify_var "$VAR"
 done
 
-stderr "Setting up /etc/gitlab-runner/config.toml"
-cat /etc/gitlab-runner/config.toml | envsubst > /etc/gitlab-runner/config.toml
-
-stderr "Setting up /etc/gitlab-runner/fargate/config.toml"
-cat /etc/gitlab-runner/fargate/config.toml | envsubst > /etc/gitlab-runner/fargate/config.toml
-
-stderr "Setting private key"
-echo "$PRIVATE_KEY" > /etc/gitlab-runner/fargate/id_rsa
-
-stderr "Setting debug public key"
-[ -d /root/.ssh ] || mkdir /root/.ssh
-echo "$DEBUG_PUBLIC_KEY" > /root/.ssh/authorized_keys
-
-stderr "Setting up /etc/gitlab-runner/fargate/fargate"
-mkdir /etc/gitlab-runner/{metadata,builds,cache}
-chown -R gitlab-runner /etc/gitlab-runner
-chmod 0777 /etc/gitlab-runner/fargate/fargate
-
 until curl "$URL" -s -o /dev/null; do
   stderr "Trying to curl $URL"
   sleep 5
 done
 
 stderr "Waiting for $URL to become ready"
-let CHECK_COUNT=0
+CHECK_COUNT=0
 while [[ "$STATUS" != "ok" ]]; do
   if [ "$CHECK_COUNT" -eq 10 ]; then
     stderr "Unable to get readiness of $URL"
@@ -55,13 +37,14 @@ while [[ "$STATUS" != "ok" ]]; do
   [[ "$STATUS" == "ok" ]] && continue
   stderr "Status is $STATUS. Waiting 30s"
   sleep 30
-  let CHECK_COUNT++
+  (( CHECK_COUNT++ ))
 done
 
 register_runner() {
   stderr "Registering runner"
   RUNNER_TOKEN=$(curl --request POST "$URL/api/v4/runners" --form "token=$REGISTRATION_TOKEN" --form "description=$NAME" --form "tag_list=$TAGS" -s | jq -r '.token')
-  push_token
+  echo "$RUNNER_TOKEN" > /token
+   push_token
 }
 
 validate_runner_token() {
@@ -70,11 +53,11 @@ validate_runner_token() {
 }
 
 push_token() {
-  stderr "Pushing token $RUNNER_TOKEN to SSM"
+  stderr "Pushing token to SSM"
   aws ssm put-parameter --region "$REGION" --name "$RUNNER_TOKEN_SSM_PARAMETER" --value "$RUNNER_TOKEN" --type SecureString --overwrite
 }
 
-let VALIDATE_COUNT=0
+VALIDATE_COUNT=0
 while true; do
   [ $VALIDATE_COUNT -eq 10 ] && error "Unable to register runner"
   VALIDATION=$(validate_runner_token)
@@ -82,8 +65,27 @@ while true; do
   [[ "$RUNNER_TOKEN" == "REPLACE_ME" ]] || stderr "Token invalid: $VALIDATION"
   register_runner
   sleep 10
-  let VALIDATE_COUNT++
+  (( VALIDATE_COUNT++ ))
 done
 
+stderr "Setting up /opt/gitlab-runner/config.toml"
+CONFIG="$(envsubst < /opt/gitlab-runner/config.toml)"
+echo "$CONFIG" > /opt/gitlab-runner/config.toml
+
+stderr "Setting up /opt/gitlab-runner/fargate/config.toml"
+FARGATE_CONFIG="$(envsubst < /opt/gitlab-runner/fargate/config.toml)"
+echo "$FARGATE_CONFIG" > /opt/gitlab-runner/fargate/config.toml
+
+stderr "Setting private key"
+echo "$PRIVATE_KEY" > /opt/gitlab-runner/fargate/id_rsa
+
+stderr "Setting debug public key"
+[ -d /root/.ssh ] || mkdir /root/.ssh
+echo "$DEBUG_PUBLIC_KEY" > /root/.ssh/authorized_keys
+
+stderr "Setting up /opt/gitlab-runner/fargate/fargate"
+chown -R gitlab-runner /opt/gitlab-runner
+chmod 0777 /opt/gitlab-runner/fargate/fargate
+
 echo "Starting runner"
-/usr/bin/dumb-init /entrypoint "$@"
+/usr/bin/dumb-init /entrypoint --log-level $LOG_LEVEL "$@"

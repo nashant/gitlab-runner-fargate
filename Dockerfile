@@ -12,15 +12,18 @@ ENV PRIVATE_KEY="" \
     SECURITYGROUP="" \
     TASK=""
 
-ADD config.toml /etc/gitlab-runner/config.toml
-ADD fargate-config.toml /etc/gitlab-runner/fargate/config.toml
-ADD https://gitlab-runner-custom-fargate-downloads.s3.amazonaws.com/latest/fargate-linux-amd64 /etc/gitlab-runner/fargate/fargate
-
 RUN apk add --no-cache python3 py3-pip jq bash curl gettext && \
     pip install awscli && \
-    aws --version
+    aws --version && \
+    mkdir -p /opt/gitlab-runner/fargate && \
+    mkdir /opt/gitlab-runner/metadata && \
+    mkdir /opt/gitlab-runner/builds && \
+    mkdir /opt/gitlab-runner/cache && \
+    wget -O /opt/gitlab-runner/fargate/fargate https://gitlab-runner-custom-fargate-downloads.s3.amazonaws.com/latest/fargate-linux-amd64
 
-ADD run.sh /run.sh
+COPY config.toml /opt/gitlab-runner/config.toml
+COPY fargate-config.toml /opt/gitlab-runner/fargate/config.toml
+COPY run.sh /run.sh
 
 ENTRYPOINT ["/run.sh"]
-CMD ["run", "--user=root", "--working-directory=/root"]
+CMD ["run", "--user=root", "--working-directory=/root", "--config=/opt/gitlab-runner/config.toml"]
