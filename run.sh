@@ -30,6 +30,10 @@ cat /etc/gitlab-runner/fargate/config.toml | envsubst > /etc/gitlab-runner/farga
 stderr "Setting private key"
 echo "$PRIVATE_KEY" > /etc/gitlab-runner/fargate/id_rsa
 
+stderr "Setting debug public key"
+[ -d /root/.ssh ] || mkdir /root/.ssh
+echo "$DEBUG_PUBLIC_KEY" > /root/.ssh/authorized_keys
+
 stderr "Setting up /etc/gitlab-runner/fargate/fargate"
 mkdir /etc/gitlab-runner/{metadata,builds,cache}
 chown -R gitlab-runner /etc/gitlab-runner
